@@ -13,6 +13,10 @@ namespace KerbalTrainingExperience
     [KSPScenario(ScenarioCreationOptions.AddToAllGames, new GameScenes[]{GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.SPACECENTER, GameScenes.TRACKSTATION})]
     public class KerbalTrainingExperience : ScenarioModule
     {
+        internal static bool ModEnable { get { return HighLogic.CurrentGame.Parameters.CustomParams<KerbalTrainingExperienceOptions>().enable; }}
+        internal static int HoursPerExpPilot { get { return HighLogic.CurrentGame.Parameters.CustomParams<KerbalTrainingExperienceOptions>().hoursPerExpPilot; }}
+        internal static int HoursPerExp { get { return HighLogic.CurrentGame.Parameters.CustomParams<KerbalTrainingExperienceOptions>().hoursPerExp; }}
+
         internal static Dictionary<string, KerbalTrainingInfo> kerbalsTrainingInfo = new Dictionary<string, KerbalTrainingInfo>();
 
         public void Start()
@@ -80,6 +84,11 @@ namespace KerbalTrainingExperience
 
         public void Update()
         {
+            if (!ModEnable)
+            {
+                return;
+            }
+
             foreach (Vessel vessel in FlightGlobals.Vessels)
             {
                 if (vessel.LandedOrSplashed || vessel.GetCrewCount() == 0)
@@ -92,11 +101,11 @@ namespace KerbalTrainingExperience
                     int trainingHoursPerExp = -1;
                     if (crew.trait == KerbalRoster.pilotTrait)
                     {
-                        trainingHoursPerExp = HighLogic.CurrentGame.Parameters.CustomParams<KerbalTrainingExperienceOptions>().hoursPerExpPilot;
+                        trainingHoursPerExp = HoursPerExpPilot;
                     }
                     else
                     {
-                        trainingHoursPerExp = HighLogic.CurrentGame.Parameters.CustomParams<KerbalTrainingExperienceOptions>().hoursPerExp;
+                        trainingHoursPerExp = HoursPerExp;
                     }
 
                     int crewTrainingExp = GetCrewTrainingExp(crew);

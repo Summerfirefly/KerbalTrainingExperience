@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 
 namespace KerbalTrainingExperience
@@ -9,37 +10,61 @@ namespace KerbalTrainingExperience
         new public void Start()
         {
             lastUpdateTime = Planetarium.GetUniversalTime();
-            KerbalTrainingExperienceUtils.Log(string.Format("Start Universal Time of {0} = {1}", Vessel.GetName(), lastUpdateTime));
+            KerbalTrainingExperienceUtils.Log(string.Format("Start Universal Time of {0} = {1}", vessel.GetName(), lastUpdateTime));
+            KerbalTrainingExperienceUtils.Log(string.Format("Vessel's mainBody is {0}", vessel.mainBody.name));
         }
 
         public void Update()
         {
-            double currentTime = Planetarium.GetUniversalTime();
-            double deltaTime = currentTime - lastUpdateTime;
-            if (Vessel.LandedOrSplashed || Vessel.GetCrewCount() == 0)
+            if (!KerbalTrainingExperience.ModEnable)
             {
                 return;
             }
 
-            Vessel.GetVesselCrew().ForEach(crew =>
+            double currentTime = Planetarium.GetUniversalTime();
+            double deltaTime = currentTime - lastUpdateTime;
+            if (vessel.GetCrewCount() == 0)
+            {
+                return;
+            }
+
+            if (vessel.LandedOrSplashed && vessel.mainBody.isHomeWorld)
+            {
+                return;
+            }
+
+            Dictionary<string, int> maxTraitLevel = new Dictionary<string, int>();
+            maxTraitLevel.Add(KerbalRoster.pilotTrait, 0);
+            maxTraitLevel.Add(KerbalRoster.engineerTrait, 0);
+            maxTraitLevel.Add(KerbalRoster.scientistTrait, 0);
+
+            vessel.GetVesselCrew().ForEach(crew =>
+            {
+                if (crew.experienceLevel > maxTraitLevel[crew.trait])
+                {
+                    maxTraitLevel[crew.trait] = crew.experienceLevel;
+                }
+            });
+
+            vessel.GetVesselCrew().ForEach(crew =>
             {
                 if (crew.trait == KerbalRoster.pilotTrait)
                 {
-                    if (Vessel.Connection.CanComm)
+                    if ((!HighLogic.CurrentGame.Parameters.Difficulty.EnableCommNet || vessel.Connection.CanComm) ||
+                        maxTraitLevel[crew.trait] > crew.experienceLevel)
                     {
                         UpdateCrewTrainingTime(crew, deltaTime);
                     }
-                    // TODO: if a higher level pilot is on the same vessel, kerbals can also be training
                 }
                 else
                 {
-                    if ((Vessel.situation & Vessel.Situations.ORBITING) != 0 || (Vessel.situation & Vessel.Situations.ESCAPING) != 0)
+                    if ((vessel.situation & Vessel.Situations.ORBITING) != 0 || (vessel.situation & Vessel.Situations.ESCAPING) != 0)
                     {
-                        if (Vessel.Connection.CanComm)
+                        if ((!HighLogic.CurrentGame.Parameters.Difficulty.EnableCommNet || vessel.Connection.CanComm) ||
+                            maxTraitLevel[crew.trait] > crew.experienceLevel)
                         {
                             UpdateCrewTrainingTime(crew, deltaTime);
                         }
-                        // TODO: if a higher level engineer/scientist is on the same vessel, kerbals can also be training
                     }
                 }
             });
