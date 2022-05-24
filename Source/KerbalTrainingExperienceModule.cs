@@ -10,8 +10,6 @@ namespace KerbalTrainingExperience
         new public void Start()
         {
             lastUpdateTime = Planetarium.GetUniversalTime();
-            KerbalTrainingExperienceUtils.Log(string.Format("Start Universal Time of {0} = {1}", vessel.GetName(), lastUpdateTime));
-            KerbalTrainingExperienceUtils.Log(string.Format("Vessel's mainBody is {0}", vessel.mainBody.name));
         }
 
         public void Update()
